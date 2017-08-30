@@ -1,0 +1,39 @@
+{
+  "name": "debugwebrtc",
+  "version": "1.0.0",
+  "description": "A tiny JavaScript library using WebRTC getStats API to debugWebRTC Application",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morrain/debugWebRTC.git"
+  },
+  "keywords": [
+    "webrtc",
+    "getstats",
+    "debug",
+    "JavaScript"
+  ],
+  "author": "morrain",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/morrain/debugWebRTC/issues"
+  },
+  "homepage": "https://github.com/morrain/debugWebRTC#readme",
+  "devDependencies": {
+    "browserify": "^14.4.0",
+    "gulp": "git+https://github.com/gulpjs/gulp.git#4.0",
+    "gulp-expect-file": "^0.0.7",
+    "gulp-header": "^1.8.9",
+    "gulp-jshint": "^2.0.4",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^3.0.0",
+    "jshint": "^2.9.5",
+    "jshint-stylish": "^2.2.1",
+    "supports-color": "^4.2.1",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}
