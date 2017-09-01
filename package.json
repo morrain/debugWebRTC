@@ -1,5 +1,6 @@
 {
   "name": "debugwebrtc",
+  "title": "DebugWebRTC",
   "version": "1.0.0",
   "description": "A tiny JavaScript library using WebRTC getStats API to debugWebRTC Application",
   "main": "src/index.js",
@@ -22,6 +23,9 @@
     "url": "https://github.com/morrain/debugWebRTC/issues"
   },
   "homepage": "https://github.com/morrain/debugWebRTC#readme",
+  "dependencies": {
+    "freeice": "^2.2.0"
+  },
   "devDependencies": {
     "browserify": "^14.4.0",
     "gulp": "git+https://github.com/gulpjs/gulp.git#4.0",

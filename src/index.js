@@ -29,6 +29,7 @@ var PARSERS = {
 
 DebugWebRTC.TYPES = TYPES;
 DebugWebRTC.PARSERS = PARSERS;
+DebugWebRTC.freeice = require('freeice');
 
 var statsParser = DebugWebRTC.statsParser = {};
 
@@ -178,212 +179,90 @@ statsParser.checkVideoTracks = function(results) {
     return video;
 };
 
-statsParser.getConnectioin = function(results) {
-    var connection = {
-        systemIpAddress: '192.168.1.2',
-        transport: '',
-        local: {
-            candidateType: [],
-            transport: [],
-            ipAddress: [],
-            networkType: []
-        },
-        remote: {
-            candidateType: [],
-            transport: [],
-            ipAddress: [],
-            networkType: []
-        }
-    };
-
-    for (var i = 0; i < results.length; i++) {
-        var ret = results[i],
-            cid = '',
-            candidate = null;
-        if (ret.type === TYPES.TYPE_GOOG_CANDIDATE_PAIR && ret.googActiveConnection === 'true') {
-            connection.transport = ret.googTransportType;
-
-            for (cid in statsParser.getLocalCandidates.candidates) {
-                if (statsParser.getLocalCandidates.candidates.hasOwnProperty(cid)) {
-                    candidate = statsParser.getLocalCandidates.candidates[cid];
-                    if (candidate.ipAddress.indexOf(ret.googLocalAddress) !== -1) {
-                        connection.local.candidateType = candidate.candidateType;
-                        connection.local.ipAddress = candidate.ipAddress;
-                        connection.local.networkType = candidate.networkType;
-                        connection.local.transport = candidate.transport;
-                    }
-                }
-            }
-
-            for (cid in statsParser.getRemotecandidate.candidates) {
-                if (statsParser.getRemotecandidate.candidates.hasOwnProperty(cid)) {
-                    candidate = statsParser.getRemotecandidate.candidates[cid];
-                    if (candidate.ipAddress.indexOf(ret.googRemoteAddress) !== -1) {
-                        connection.remote.candidateType = candidate.candidateType;
-                        connection.remote.ipAddress = candidate.ipAddress;
-                        connection.remote.networkType = candidate.networkType;
-                        connection.remote.transport = candidate.transport;
-                    }
-                }
-            }
-
-            var localCandidate = statsParser.getLocalCandidates.candidates[ret.localCandidateId];
-            if (localCandidate) {
-                if (localCandidate.ipAddress) {
-                    connection.systemIpAddress = localCandidate.ipAddress;
-                }
-            }
-
-            var remoteCandidate = statsParser.getRemotecandidate.candidates[ret.remoteCandidateId];
-            if (remoteCandidate) {
-                if (remoteCandidate.ipAddress) {
-                    connection.systemIpAddress = remoteCandidate.ipAddress;
-                }
-            }
-        }
-    }
-
-    return connection;
-};
-
-
-var LOCAL_candidateType = {};
-var LOCAL_transport = {};
-var LOCAL_ipAddress = {};
-var LOCAL_networkType = {};
 statsParser.getLocalCandidates = function(results) {
     var locals = [];
 
-    for (var i = 0; i < results[i].length; i++) {
-        var ret = results[i];
+    for (var i = 0; i < results.length; i++) {
+        var ret = results[i],
+            local = null;
 
         if (ret.type === TYPES.TYPE_LOCAL_CANDIDATE && ret.id) {
-            if (!LOCAL_candidateType[ret.id]) {
-                LOCAL_candidateType[ret.id] = [];
+
+            local = {};
+
+            if (ret.candidateType) {
+                local.candidateType = ret.candidateType;
             }
 
-            if (!LOCAL_transport[ret.id]) {
-                LOCAL_transport[ret.id] = [];
+            if (ret.transport) {
+                local.transport = ret.transport;
             }
 
-            if (!LOCAL_ipAddress[ret.id]) {
-                LOCAL_ipAddress[ret.id] = [];
+            if (ret.ipAddress) {
+                local.ipAddress = ret.ipAddress + ':' + ret.portNumber;
             }
 
-            if (!LOCAL_networkType[ret.id]) {
-                LOCAL_networkType[ret.id] = [];
+            if (ret.networkType) {
+                local.networkType = ret.networkType;
             }
 
-            if (ret.candidateType && LOCAL_candidateType[ret.id].indexOf(ret.candidateType) === -1) {
-                LOCAL_candidateType[ret.id].push(ret.candidateType);
-            }
-
-            if (ret.transport && LOCAL_transport[ret.id].indexOf(ret.transport) === -1) {
-                LOCAL_transport[ret.id].push(ret.transport);
-            }
-
-            if (ret.ipAddress && LOCAL_ipAddress[ret.id].indexOf(ret.ipAddress + ':' + ret.portNumber) === -1) {
-                LOCAL_ipAddress[ret.id].push(ret.ipAddress + ':' + ret.portNumber);
-            }
-
-            if (ret.networkType && LOCAL_networkType[ret.id].indexOf(ret.networkType) === -1) {
-                LOCAL_networkType[ret.id].push(ret.networkType);
-            }
-
-            statsParser.getLocalCandidates.candidates[ret.id] = {
-                candidateType: LOCAL_candidateType[ret.id],
-                ipAddress: LOCAL_ipAddress[ret.id],
-                portNumber: ret.portNumber,
-                networkType: LOCAL_networkType[ret.id],
-                priority: ret.priority,
-                transport: LOCAL_transport[ret.id],
-                timestamp: ret.timestamp,
-                id: ret.id,
-                type: ret.type
-            };
-
-            locals.push({
-                candidateType: LOCAL_candidateType[ret.id],
-                ipAddress: LOCAL_ipAddress[ret.id],
-                networkType: LOCAL_networkType[ret.id],
-                transport: LOCAL_transport[ret.id]
-            });
+            locals.push(local);
         }
     }
     return locals;
 };
-statsParser.getLocalCandidates.candidates = {};
 
-
-
-var REMOTE_candidateType = {};
-var REMOTE_transport = {};
-var REMOTE_ipAddress = {};
-var REMOTE_networkType = {};
 statsParser.getRemotecandidate = function(results) {
     var remotes = [];
 
-    for (var i = 0; i < results[i].length; i++) {
-        var ret = results[i];
+    for (var i = 0; i < results.length; i++) {
+        var ret = results[i],
+            remote = null;
 
         if (ret.type === TYPES.TYPE_REMOTE_CANDIDATE && ret.id) {
-            if (!REMOTE_candidateType[ret.id]) {
-                REMOTE_candidateType[ret.id] = [];
+
+            remote = {};
+
+            if (ret.candidateType) {
+                remote.candidateType = ret.candidateType;
             }
 
-            if (!REMOTE_transport[ret.id]) {
-                REMOTE_transport[ret.id] = [];
+            if (ret.transport) {
+                remote.transport = ret.transport;
             }
 
-            if (!REMOTE_ipAddress[ret.id]) {
-                REMOTE_ipAddress[ret.id] = [];
+            if (ret.ipAddress) {
+                remote.ipAddress = ret.ipAddress + ':' + ret.portNumber;
             }
 
-            if (!REMOTE_networkType[ret.id]) {
-                REMOTE_networkType[ret.id] = [];
+            if (ret.networkType) {
+                remote.networkType = ret.networkType;
             }
 
-            if (ret.candidateType && REMOTE_candidateType[ret.id].indexOf(ret.candidateType) === -1) {
-                REMOTE_candidateType[ret.id].push(ret.candidateType);
-            }
-
-            if (ret.transport && REMOTE_transport[ret.id].indexOf(ret.transport) === -1) {
-                REMOTE_transport[ret.id].push(ret.transport);
-            }
-
-            if (ret.ipAddress && REMOTE_ipAddress[ret.id].indexOf(ret.ipAddress + ':' + ret.portNumber) === -1) {
-                REMOTE_ipAddress[ret.id].push(ret.ipAddress + ':' + ret.portNumber);
-            }
-
-            if (ret.networkType && REMOTE_networkType[ret.id].indexOf(ret.networkType) === -1) {
-                REMOTE_networkType[ret.id].push(ret.networkType);
-            }
-
-            statsParser.getRemoteCandidates.candidates[ret.id] = {
-                candidateType: REMOTE_candidateType[ret.id],
-                ipAddress: REMOTE_ipAddress[ret.id],
-                portNumber: ret.portNumber,
-                networkType: REMOTE_networkType[ret.id],
-                priority: ret.priority,
-                transport: REMOTE_transport[ret.id],
-                timestamp: ret.timestamp,
-                id: ret.id,
-                type: ret.type
-            };
-
-            remotes.push({
-                candidateType: REMOTE_candidateType[ret.id],
-                ipAddress: REMOTE_ipAddress[ret.id],
-                networkType: REMOTE_networkType[ret.id],
-                transport: REMOTE_transport[ret.id]
-            });
+            remotes.push(remote);
         }
     }
 
     return remotes;
 };
-statsParser.getRemotecandidate.candidates = {};
 
+statsParser.getConnectioin = function(results) {
+    var connection = {
+        transport: ''
+    };
+
+    for (var i = 0; i < results.length; i++) {
+        var ret = results[i];
+        if (ret.type === TYPES.TYPE_GOOG_CANDIDATE_PAIR && ret.googActiveConnection === 'true') {
+            connection.transport = ret.googTransportType;
+        }
+    }
+
+    connection.locals = statsParser.getLocalCandidates(results);
+    connection.remotes = statsParser.getRemotecandidate(results);
+
+    return connection;
+};
 
 
 statsParser.getDataSentReceived = function(results) {
@@ -416,40 +295,40 @@ statsParser.getDataSentReceived = function(results) {
 
 statsParser.getStreams = function(results) {
 
+    var ssrc = {
+        audio: {
+            send: [],
+            recv: []
+        },
+        video: {
+            send: [],
+            recv: []
+        }
+    };
 
-    for (var i = 0; i < results[i].length; i++) {
+    for (var i = 0; i < results.length; i++) {
         var ret = results[i];
 
         if (ret.googCodecName && ret.type === 'ssrc' && (ret.mediaType === 'video' || ret.mediaType === 'audio')) {
             var type = ret.id.split('_').pop();
 
-            if (statsParser.getStreams.ssrc[ret.mediaType][type].indexOf(ret.ssrc) === -1) {
-                statsParser.getStreams.ssrc[ret.mediaType][type].push(ret.ssrc);
+            if (ssrc[ret.mediaType][type].indexOf(ret.ssrc) === -1) {
+                ssrc[ret.mediaType][type].push(ret.ssrc);
             }
         }
     }
 
     return {
         video: {
-            send: statsParser.getStreams.ssrc.video.send.length,
-            recv: statsParser.getStreams.ssrc.video.recv.length
+            send: ssrc.video.send.length,
+            recv: ssrc.video.recv.length
         },
         audio: {
-            send: statsParser.getStreams.ssrc.audio.send.length,
-            recv: statsParser.getStreams.ssrc.audio.recv.length
+            send: ssrc.audio.send.length,
+            recv: ssrc.audio.recv.length
         }
     };
 
-};
-statsParser.getStreams.ssrc = {
-    audio: {
-        send: [],
-        recv: []
-    },
-    video: {
-        send: [],
-        recv: []
-    }
 };
 
 /**
@@ -489,15 +368,17 @@ DebugWebRTC.prototype.stop = function() {
 };
 DebugWebRTC.prototype.start = function() {
     this.do = true; //是否要获取统计数据
-    getStatsLooper.call(this);
+    setTimeout(getStatsLooper.bind(this), this.interval);
 };
 
 function getStatsLooper() {
-
+    var self = this;
 
     this.peer.getStats(function(res) {
+
         var items = [],
             listener = '';
+
         res.result().forEach(function(res) {
             var item = {};
             res.names().forEach(function(name) {
@@ -509,13 +390,19 @@ function getStatsLooper() {
             items.push(item);
         });
 
-        for (listener in this.listeners) {
-            if (TYPES.values().indexOf(listener) !== -1) {
-                emit.apply(this, [listener, items.filter(function(itm) { return itm.type === listener; })]);
+        for (listener in self.listeners) {
+            if (Object.values(TYPES).indexOf(listener) !== -1) {
+                emit.apply(self, [listener, items.filter(function(itm) {
+                    if (listener === TYPES.TYPE_ALL) {
+                        return true;
+                    }
+
+                    return itm.type === listener;
+                })]);
             }
 
-            if (statsParser.keys().indexOf(listener) !== -1) {
-                emit.apply(this, [listener, statsParser[listener](items)]);
+            if (Object.keys(statsParser).indexOf(listener) !== -1) {
+                emit.apply(self, [listener, statsParser[listener](items)]);
             }
         }
 

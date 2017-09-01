@@ -60,70 +60,50 @@ module.exports = {
     },
     'parse getLocalCandidates': function(test) {
         var locals = DebugWebRTC.statsParser.getLocalCandidates(results);
-        locals.forEach(function(local) {
-            test.deepEqual(local, {
-                candidateType: ['host'],
-                transport: ['udp'],
-                ipAddress: ['10.242.72.102:52867'],
-                networkType: ['unknown']
-            });
-        });
+        test.deepEqual(locals, [{
+            candidateType: 'host',
+            transport: 'udp',
+            ipAddress: '10.242.72.102:52867',
+            networkType: 'unknown'
+        }]);
 
-        // test.deepEqual(DebugWebRTC.statsParser.getLocalCandidates.candidates['Cand-WdlcS0CI'], {
-        //     candidateType: ['host'],
-        //     ipAddress: ['10.242.72.102:52867'],
-        //     portNumber: 52867,
-        //     networkType: ['unknown'],
-        //     priority: 2113937151,
-        //     transport: ['udp'],
-        //     timestamp: '2017-09-01T02:55:32.737Z',
-        //     id: 'Cand-WdlcS0CI',
-        //     type: 'localcandidate'
-        // });
         test.done();
     },
     'parse getRemotecandidate': function(test) {
         var remotes = DebugWebRTC.statsParser.getRemotecandidate(results);
-        remotes.forEach(function(remote) {
-            test.deepEqual(remote, {
-                candidateType: ['host'],
-                transport: ['udp'],
-                ipAddress: ['10.242.72.102:57309'],
-                networkType: []
-            });
-        });
-        // test.deepEqual(DebugWebRTC.statsParser.getRemotecandidate.candidates, {
-        //     'Cand-e3PTgP2x': {
-        //         candidateType: ['host'],
-        //         ipAddress: ['10.242.72.102:57309'],
-        //         portNumber: 57309,
-        //         networkType: [],
-        //         priority: 2113937151,
-        //         transport: ['udp'],
-        //         timestamp: '2017-09-01T02:55:32.737Z',
-        //         id: 'Cand-e3PTgP2x',
-        //         type: 'remotecandidate'
-        //     }
-        // });
+        test.deepEqual(remotes, [{
+            candidateType: 'host',
+            transport: 'udp',
+            ipAddress: '10.242.72.102:57309'
+        }, {
+            candidateType: 'serverreflexive',
+            transport: 'udp',
+            ipAddress: '123.58.160.131:4878'
+        }, {
+            candidateType: 'serverreflexive',
+            transport: 'udp',
+            ipAddress: '123.58.160.131:4870'
+        }, {
+            candidateType: 'serverreflexive',
+            transport: 'udp',
+            ipAddress: '43.230.90.181:57309'
+        }, {
+            candidateType: 'relayed',
+            transport: 'udp',
+            ipAddress: '64.251.31.85:60423'
+        }, {
+            candidateType: 'relayed',
+            transport: 'udp',
+            ipAddress: '64.251.31.85:54876'
+        }]);
         test.done();
     },
     'parse getConnectioin': function(test) {
         var conn = DebugWebRTC.statsParser.getConnectioin(results);
         test.deepEqual(conn, {
-            systemIpAddress: '192.168.1.2',
             transport: 'udp',
-            local: {
-                candidateType: [],
-                transport: [],
-                ipAddress: [],
-                networkType: []
-            },
-            remote: {
-                candidateType: [],
-                transport: [],
-                ipAddress: [],
-                networkType: []
-            }
+            locals: DebugWebRTC.statsParser.getLocalCandidates(results),
+            remotes: DebugWebRTC.statsParser.getRemotecandidate(results)
         });
         test.done();
     },
@@ -142,17 +122,17 @@ module.exports = {
         test.done();
     },
     'parese getStreams': function(test) {
-        //var streams = DebugWebRTC.statsParser.getStreams(results);
-        // test.deepEqual(streams, {
-        //     video: {
-        //         send: 1,
-        //         recv: 1
-        //     },
-        //     audio: {
-        //         send: 1,
-        //         recv: 1
-        //     }
-        // });
+        var streams = DebugWebRTC.statsParser.getStreams(results);
+        test.deepEqual(streams, {
+            video: {
+                send: 1,
+                recv: 1
+            },
+            audio: {
+                send: 1,
+                recv: 1
+            }
+        });
 
         test.done();
     }
