@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>debugwebrtc Demo | WebRTC getStats API</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">    
+    <link rel="stylesheet" href="./style.css">
+
+    <style>
+            audio, video {
+                -moz-transition: all 1s ease;
+                -ms-transition: all 1s ease;
+                
+                -o-transition: all 1s ease;
+                -webkit-transition: all 1s ease;
+                transition: all 1s ease;
+                vertical-align: top;
+            }
+
+            input {
+                border: 1px solid #d9d9d9;
+                border-radius: 1px;
+                font-size: 2em;
+                margin: .2em;
+                width: 30%;
+            }
+
+            .setup {
+                border-bottom-left-radius: 0;
+                border-top-left-radius: 0;
+                font-size: 102%;
+                height: 47px;
+                margin-left: -9px;
+                margin-top: 8px;
+                position: absolute;
+            }
+
+            p { padding: 1em; }
+
+            li {
+                border-bottom: 1px solid rgb(189, 189, 189);
+                border-left: 1px solid rgb(189, 189, 189);
+                padding: .5em;
+            }
+            
+            .videos-container {
+                border: 2px solid black;
+                padding: .1em;
+                border-radius: 0.2em;
+                background: white;
+                overflow: hidden;
+            }
+            .videos-container h2 {
+                border: 0;
+                border-top: 1px solid black;
+                margin: 0;
+                text-align: center;
+                display:block;
+            }
+            video {
+                width:100%;
+                background: black;
+            }
+
+            .videos-container p {
+                margin: 0;
+                padding: 0;
+                text-align: left;
+            }
+
+            table {
+                width: 100%;
+            }
+
+            td, th, tr {
+                padding: 1px 3px;
+            }
+
+            td {
+                width: 40%!important;
+            }
+
+            td:first-child, th {
+                font-weight: bold;
+                color: #EC008C;
+            }
+
+            td:first-child, th:first-child {
+                width: 150px!important;
+            }
+
+            table {
+                border-bottom: 1px dotted #BBA9A9;
+                border-left: 1px dotted #BBA9A9;
+            }
+
+            label {
+                width: 100px!important;
+                display: inline-block;
+                text-align: right;
+                padding-right: 15px;
+            }
+    </style>
+
+    <script src="https://cdn.webrtc-experiment.com/getStats.js"></script>
+    <script src="../dist/debugwebrtc.js"></script>
+    <!-- for Edige/FF/Chrome/Opera/etc. getUserMedia support -->
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+</head>
+
+<body>
+    <article>
+        <header style="text-align: center;">
+            <h1>
+                debugwebrtc.js Demo | WebRTC getStats API
+            </h1>
+            <p></p>
+        </header>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="btn-stop" disabled>Stop</button>
+            <select id="select-iceTransportPolicy">
+                <option value="all">STUN+TURN</option>
+                <option value="relay">TURN Only</option>
+            </select>
+            <select id="select-iceTransportLimitation">
+                <option value="all">UDP+TCP</option>
+                <option value="tcp">TCP Only</option>
+            </select>
+            <select id="select-codec">
+                <option value="vp9">VP9</option>
+                <option value="vp8">VP8</option>
+            </select>
+        </div>
+
+        <table>
+            <thead>
+                <th></th>
+                <th>First Peer</th>
+                <th>Second Peer</th>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>
+                        Videos
+                    </td>
+                    <td>
+                        <video id="peer2-to-peer1" controls muted></video>
+                    </td>
+                    <td>
+                        <video id="peer1-to-peer2" controls muted></video>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Available Bandwidth</td>
+                    <td><span id="peer1-availableSendBandwidth"></span></td>
+                    <td><span id="peer2-availableSendBandwidth"></span></td>
+                </tr>
+
+                <tr>
+                    <td>STUN/TURN?</td>
+                    <td>
+                        <label>Local:</label> <span id="peer1-localIceType"></span> (<span id="peer1-localTransport"></span>)<br>
+                        <label>Remote:</label> <span id="peer1-remoteIceType"></span> (<span id="peer1-remoteTransport"></span>)<br>
+                    </td>
+                    <td>
+                        <label>Local:</label> <span id="peer2-localIceType"></span> (<span id="peer2-localTransport"></span>)<br>
+                        <label>Remote:</label> <span id="peer2-remoteIceType"></span> (<span id="peer2-remoteTransport"></span>)<br>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Codecs</td>
+                    <td>
+                        <label>Send:</label> <span id="peer1-audioCodecsSend"></span><span>, </span><span id="peer1-videoCodecsSend"></span><br>
+                        <label>Recv:</label> <span id="peer1-audioCodecsRecv"></span><span>, </span><span id="peer1-videoCodecsRecv"></span><br>
+                    </td>
+                    <td>
+                        <label>Send:</label> <span id="peer2-audioCodecsSend"></span><span>, </span><span id="peer2-videoCodecsSend"></span><br>
+                        <label>Recv:</label> <span id="peer2-audioCodecsRecv"></span><span>, </span><span id="peer2-videoCodecsRecv"></span><br>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Encryption</td>
+                    <td><span id="peer1-encryptedAs"></span></td>
+                    <td><span id="peer2-encryptedAs"></span></td>
+                </tr>
+
+                <tr>
+                    <td>IP Address</td>
+                    <td>
+                        <label>Send:</label> <span id="peer1-externalIPAddressLocal"></span><br>
+                        <label>Recv:</label> <span id="peer1-externalIPAddressRemote"></span>
+                    </td>
+                    <td>
+                        <label>Send:</label> <span id="peer2-externalIPAddressLocal"></span><br>
+                        <label>Recv:</label> <span id="peer2-externalIPAddressRemote"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Resolutions</td>
+                    <td>
+                        <label>Send:</label> <span id="peer1-videoResolutionsForSenders"></span><br>
+                        <label>Recv:</label> <span id="peer1-videoResolutionsForReceivers"></span>
+                    </td>
+                    <td>
+                        <label>Send:</label> <span id="peer2-videoResolutionsForSenders"></span><br>
+                        <label>Recv:</label> <span id="peer2-videoResolutionsForReceivers"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Data</td>
+                    <td>
+                        <label>Send:</label> <span id="peer1-totalDataForSenders"></span><br>
+                        <label>Recv:</label> <span id="peer1-totalDataForReceivers"></span>
+                    </td>
+                    <td>
+                        <label>Send:</label> <span id="peer2-totalDataForSenders"></span><br>
+                        <label>Recv:</label> <span id="peer2-totalDataForReceivers"></span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+            <script>
+                var iceTransportPolicy = document.getElementById('select-iceTransportPolicy');
+                if(localStorage.getItem('iceTransportPolicy')) {
+                    iceTransportPolicy.value = localStorage.getItem('iceTransportPolicy');
+                }
+                iceTransportPolicy.onchange = function() {
+                    localStorage.setItem('iceTransportPolicy', this.value);
+                    location.reload();
+                };
+
+                var iceTransportLimitation = document.getElementById('select-iceTransportLimitation');
+                if(localStorage.getItem('iceTransportLimitation')) {
+                    iceTransportLimitation.value = localStorage.getItem('iceTransportLimitation');
+                }
+                iceTransportLimitation.onchange = function() {
+                    localStorage.setItem('iceTransportLimitation', this.value);
+                    location.reload();
+                };
+
+                var codec = document.getElementById('select-codec');
+                if(localStorage.getItem('codec')) {
+                    codec.value = localStorage.getItem('codec');
+                }
+                codec.onchange = function() {
+                    localStorage.setItem('codec', this.value);
+                    location.reload();
+                };
+
+                function addIceCandidate(peer, candidate) {
+                    if(iceTransportLimitation.value === 'tcp') {
+                        if(candidate.candidate.toLowerCase().indexOf('tcp') === -1) {
+                            return; // ignore UDP
+                        }
+                    }
+
+                    peer.addIceCandidate(candidate);
+                }
+            </script>
+            <script>
+                var offerer, answerer;
+                var offererDebug, answererDebug;
+                var offererToAnswerer = document.getElementById('peer1-to-peer2');
+                var answererToOfferer = document.getElementById('peer2-to-peer1');
+
+                var iceServers = {
+                    iceServers: DebugWebRTC.freeice(),
+                    iceTransportPolicy: iceTransportPolicy.value,
+                    rtcpMuxPolicy: 'require',
+                    bundlePolicy: 'max-bundle'
+                };
+
+                var mediaConstraints = {
+                    OfferToReceiveAudio: true,
+                    OfferToReceiveVideo: true
+                };
+
+                function doDebug(peer) {
+                	    var debug = new DebugWebRTC({
+                        	peer: peer,
+                        	interval:1000
+                        });
+                        
+                        debug.on(DebugWebRTC.TYPES.TYPE_VIDEOBWE, function (results) {
+                        	document.getElementById('peer' + peer.id + '-availableSendBandwidth').innerHTML = bytesToSize(results[0].googAvailableSendBandwidth);
+                        });
+                        debug.on(DebugWebRTC.PARSERS.PARSER_CHECK_AUDIO_TRACKS, function (audio) {
+	                        document.getElementById('peer' + peer.id + '-audioCodecsSend').innerHTML = audio.send.codecs.join(', ');
+	                        document.getElementById('peer' + peer.id + '-audioCodecsRecv').innerHTML = audio.recv.codecs.join(', ');
+                        });
+                        debug.on(DebugWebRTC.PARSERS.PARSER_CHECK_VIDEO_TRACKS, function (video) {
+	                        document.getElementById('peer' + peer.id + '-videoCodecsSend').innerHTML = video.send.codecs.join(', ');
+	                        document.getElementById('peer' + peer.id + '-videoCodecsRecv').innerHTML = video.recv.codecs.join(', ');
+	                        document.getElementById('peer' + peer.id + '-videoResolutionsForSenders').innerHTML = video.send.resolutions.width + 'x' + video.send.resolutions.height;
+                            document.getElementById('peer' + peer.id + '-videoResolutionsForReceivers').innerHTML = video.recv.resolutions.width + 'x' + video.recv.resolutions.height;
+                        });
+
+                        debug.on(DebugWebRTC.PARSERS.PARSER_GET_PRINT_ALGORITHM, function (alg) {
+                        	document.getElementById('peer' + peer.id + '-encryptedAs').innerHTML = alg;
+                        });
+
+                        debug.on(DebugWebRTC.PARSERS.PARSER_GET_DATA_SENT_RECEIVED, function (bytes) {
+	                       document.getElementById('peer' + peer.id + '-totalDataForSenders').innerHTML = bytesToSize(bytes.audio.bytesSent + bytes.video.bytesSent);
+	                        document.getElementById('peer' + peer.id + '-totalDataForReceivers').innerHTML = bytesToSize(bytes.audio.bytesReceived + bytes.video.bytesReceived);
+                        });
+
+                        debug.on(DebugWebRTC.PARSERS.PARSER_GET_CONNECTION,function (conn) {
+
+ 							var hasRelayed = !!conn.locals.filter(function(l) { return l.candidateType === 'relayed'; }).length;
+	                        document.getElementById('peer' + peer.id + '-localIceType').innerHTML = hasRelayed ? 'TURN':'STUN';
+	                        document.getElementById('peer' + peer.id + '-externalIPAddressLocal').innerHTML = conn.locals.map(function(l) {return l.ipAddress;}).join(', ');
+	                        document.getElementById('peer' + peer.id + '-localTransport').innerHTML = conn.locals.map(function(l) {return l.transport;}).join(', ');
+
+ 							var hasRelayed = !!conn.remotes.filter(function(l) { return l.candidateType === 'relayed'; }).length;
+	                        document.getElementById('peer' + peer.id + '-remoteIceType').innerHTML = hasRelayed ? 'TURN':'STUN';
+	                        document.getElementById('peer' + peer.id + '-externalIPAddressRemote').innerHTML = conn.remotes.map(function(l) {return l.ipAddress;}).join(', ');
+	                        document.getElementById('peer' + peer.id + '-remoteTransport').innerHTML = conn.remotes.map(function(l) {return l.transport;}).join(', ');
+                        });
+
+                        return debug;
+                }
+            </script>
+            <script>
+                /* offerer */
+
+                function offererPeer(video_stream) {
+                    offerer = new RTCPeerConnection(iceServers);
+                    offerer.id = 1;
+
+                    video_stream.getTracks().forEach(function(track) {
+                        offerer.addTrack(track, video_stream);
+                    });
+
+                    var firedOnce = false;
+                    offerer.ontrack = function (event) {
+                        if(firedOnce) return;
+                        firedOnce = true;
+
+                        offererToAnswerer.srcObject = event.streams[0];
+                        offererDebug = doDebug(offerer);
+
+                    };
+
+                    offerer.onicecandidate = function (event) {
+                        if (!event || !event.candidate) return;
+                        addIceCandidate(answerer, event.candidate);
+                    };
+
+                    offerer.createOffer(mediaConstraints).then(function (offer) {
+                        offer.sdp = preferVP9(offer.sdp);
+                        offerer.setLocalDescription(offer).then(function() {
+                            answererPeer(offer, video_stream);
+                        }, function() {});
+                    }, function() {});
+                }
+            </script>
+            <script>
+                /* answerer */
+
+                function answererPeer(offer, video_stream) {
+                    answerer = new RTCPeerConnection(iceServers);
+                    answerer.id = 2;
+                    
+                    video_stream.getTracks().forEach(function(track) {
+                        answerer.addTrack(track, video_stream);
+                    });
+
+                    var firedOnce = false;
+                    answerer.ontrack = function (event) {
+                        if(firedOnce) return;
+                        firedOnce = true;
+
+                        answererToOfferer.srcObject = event.streams[0];
+                        answererDebug = doDebug(answerer);
+                    };
+
+                    answerer.onicecandidate = function (event) {
+                        if (!event || !event.candidate) return;
+                        addIceCandidate(offerer, event.candidate);
+                    };
+
+                    answerer.setRemoteDescription(offer);
+                    answerer.createAnswer(mediaConstraints).then(function (answer) {
+                        answer.sdp = preferVP9(answer.sdp);
+                        answerer.setLocalDescription(answer).then(function() {
+                            offerer.setRemoteDescription(answer);
+                        }, function() {});                        
+                    }, function() {});
+                }
+            </script>
+            <script>
+                var video_constraints = {
+                    mandatory: {},
+                    optional: []
+                };
+
+                function getUserMedia(successCallback) {
+                    function errorCallback(e) {
+                        alert(JSON.stringify(e, null, '\t'));
+                    }
+
+                    var mediaConstraints = { video: true, audio: true };
+
+                    navigator.mediaDevices.getUserMedia(mediaConstraints).then(successCallback).catch(errorCallback);
+                }
+            </script>
+            <script>
+                var CAMERA_STREAM;
+                getUserMedia(function (video_stream) {
+                    CAMERA_STREAM = video_stream;
+                    offererPeer(video_stream);
+
+                    document.getElementById('btn-stop').disabled = false;
+                });
+            </script>
+
+            <script>
+                document.getElementById('btn-stop').onclick = function() {
+                    this.disabled = true;
+
+                    offererDebug.stop();
+                    answererDebug.stop();
+
+                    if(CAMERA_STREAM && CAMERA_STREAM.active === true) {
+                        CAMERA_STREAM.getTracks().forEach(function(track) {
+                            track.stop();
+                        });
+                    }
+                };
+
+                function bytesToSize(bytes) {
+                    var k = 1000;
+                    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                    if (bytes === 0) {
+                        return '0 Bytes';
+                    }
+                    var i = parseInt(Math.floor(Math.log(bytes) / Math.log(k)), 10);
+                    return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+                }
+
+                function preferVP9(sdp) {
+                    if(codec.value === 'vp8') {
+                        return sdp; // ignore VP9
+                    }
+
+                    if (sdp.indexOf('SAVPF 96 98') === -1 || sdp.indexOf('VP9/90000') === -1) {
+                        return sdp;
+                    }
+
+                    return sdp.replace('SAVPF 96 98', 'SAVPF 98 96');
+                }
+            </script>
+    </article>
+
+    <a href="https://github.com/morrain/debugWebRTC" class="fork-left"></a>
+</body>
+
+</html>
