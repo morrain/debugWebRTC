@@ -3,9 +3,76 @@ A tiny JavaScript debugging utility using WebRTC getStats API to debug WebRTC Ap
 
 ## Installation
 
+### npm
+
 ```bash
 $ npm install debugwebrtc
 ```
+
+### browser support
+
+You just need to have [Node.js](http://nodejs.org/) to build debugwebrtc.js and debugwebrtc.min.js
+
+1. [Install Node.js](https://nodejs.org/en/download/)
+2. Install `gulp-cli` (>= 1.2.2) globally (which provides the `gulp` command):
+
+```bash
+$ npm install -g gulp-cli
+```
+
+3. Install the Node.js dependencies:
+
+```bash
+$ npm install
+```
+
+Finally, run `gulp dist` (or just `gulp`) to get:
+
+* `dist/debugwebrtc.js`: uncompressed version of DebugWebRTC.
+* `dist/debugwebrtc.min.js`: compressed version of DebugWebRTC.
+
+```bash
+$ gulp dist
+```
+
+4. then you can use it directed in your web page as follows:
+
+``` html
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="./dist/debugwebrtc.js"></script>
+</head>
+<body>
+    <script>
+        var peer = new RTCPeerConnection({
+            iceServers: DebugWebRTC.freeice(),
+            iceTransportPolicy: 'all',
+            rtcpMuxPolicy: 'require',
+            bundlePolicy: 'max-bundle'
+        });
+        var debug = new DebugWebRTC({
+            peer: peer,
+            interval:1000
+        });
+
+        //TYPES
+        debug.on(DebugWebRTC.TYPES.TYPE_VIDEOBWE, function (results) {
+            // do your work
+        });
+
+        //PARSERS
+        debug.on(DebugWebRTC.PARSERS.PARSER_CHECK_AUDIO_TRACKS, function (audio) {
+            //do your work
+        });
+        
+    </script>
+
+</body>
+</html>
+```
+
 
 ## Usage
 
