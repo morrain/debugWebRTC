@@ -71,6 +71,9 @@ DebugWebRTC.prototype.stop = function() {
     this.timer = null;
 };
 DebugWebRTC.prototype.start = function() {
+
+    this.stop(); //开始之前先stop，清除定时器
+
     this.do = true; //是否要获取统计数据
     this.timer = setTimeout(getStatsLooper.bind(this), this.interval);
 };

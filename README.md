@@ -33,6 +33,17 @@ debug.on(DebugWebRTC.PARSERS.PARSER_CHECK_AUDIO_TRACKS, function (audio) {
     //do your work
 });
 
+debug.stop();//Stop getting statistics, you can re-start it by start api
+debug.start();//Re-start getting statistics 
+
+
+//......
+//......
+//......
+
+//Stop getting the statistics and destroy the instance
+debug.desroy();
+
 ```
 
 
@@ -231,6 +242,16 @@ debug.on(DebugWebRTC.PARSERS.PARSER_GET_CONNECTION, function (connection) {
     // do your work when you will get the connection data as follows 
     //    {
     //        transport: 'udp',
+    //        rtt: 1,
+    //        localAddress: '10.242.72.102:52867',
+    //        remoteAddress: '10.242.72.102:57309',
+    //        packetsSent: 5131,
+    //        bytesSent: 4248192,
+    //        bytesReceived: 3511972,
+    //        requestsSent: 13,
+    //        requestsReceived: 11,
+    //        responsesSent: 11,
+    //        responsesReceived: 13,
     //        locals: [{
     //            candidateType: 'host',
     //            transport: 'udp',
@@ -296,16 +317,40 @@ Get streams for the current PeerConnection instance.
 //PARSER_GET_STREAMS
 debug.on(DebugWebRTC.PARSERS.PARSER_GET_STREAMS, function (streams) {
     // do your work when you will get the streams data as follows 
-    //    {
-    //        video: {
-    //            send: 1,
-    //            recv: 1
-    //        },
+    //{
     //        audio: {
-    //            send: 1,
-    //            recv: 1
+    //            send: {
+    //                bytes: 96183,
+    //                packets: 957,
+    //                packetsLost: 0,
+    //                googRtt: 16,
+    //                googJitterReceived: 11
+    //            },
+    //            recv: {
+    //                bytes: 96289,
+    //                packets: 958,
+    //                packetsLost: 0,
+    //                googJitterReceived: 11,
+    //                googJitterBufferMs: 76
+    //            }
+    //        },
+    //        video: {
+    //            send: {
+    //                bytes: 4109772,
+    //                packets: 3749,
+    //                packetsLost: 0,
+    //                googRtt: 8,
+    //                googEncodeUsagePercent: 94
+    //            },
+    //            recv: {
+    //                bytes: 3376635,
+    //                packets: 3120,
+    //                packetsLost: 0,
+    //                googCurrentDelayMs: 76,
+    //                googJitterBufferMs: 55
+    //            }
     //        }
-    //    }
+    //}
 });
 ```
 
