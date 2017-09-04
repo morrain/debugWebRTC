@@ -31,6 +31,113 @@ DebugWebRTC.TYPES = TYPES;
 DebugWebRTC.PARSERS = PARSERS;
 DebugWebRTC.freeice = require('freeice');
 
+/**
+ * [DebugWebRTC description]
+ * @param {[Object]} config  
+ * @param {object} config.peer            PeerConnection instance
+ * @param {number} config.interval        getStats interval
+ */
+function DebugWebRTC(config) {
+
+    config = config || {};
+
+    if (!config.peer) { throw 'cannot find PeerConnection instance'; }
+
+    this.listeners = {};
+    this.peer = config.peer;
+    this.interval = config.interval || 1000;
+    this.start();
+}
+
+
+/**
+ * 
+ * @param  {[type]} type [description]  TYPES
+ * @return {[type]}      [description]
+ */
+DebugWebRTC.prototype.on = function(type, fn) {
+    if (this.listeners[type]) {
+        this.listeners[type].push(fn);
+    } else {
+        this.listeners[type] = [fn];
+    }
+};
+
+DebugWebRTC.prototype.stop = function() {
+    this.do = false;
+};
+DebugWebRTC.prototype.start = function() {
+    this.do = true; //是否要获取统计数据
+    setTimeout(getStatsLooper.bind(this), this.interval);
+};
+
+function getStatsLooper() {
+    var self = this;
+
+    this.peer.getStats(function(res) {
+
+        var items = [],
+            listener = '';
+
+        res.result().forEach(function(res) {
+            var item = {};
+            res.names().forEach(function(name) {
+                item[name] = res.stat(name);
+            });
+            item.id = res.id;
+            item.type = res.type;
+            item.timestamp = res.timestamp;
+            items.push(item);
+        });
+
+        for (listener in self.listeners) {
+            if (Object.values(TYPES).indexOf(listener) !== -1) {
+                emit.apply(self, [listener, items.filter(function(itm) {
+                    if (listener === TYPES.TYPE_ALL) {
+                        return true;
+                    }
+
+                    return itm.type === listener;
+                })]);
+            }
+
+            if (Object.keys(statsParser).indexOf(listener) !== -1) {
+                emit.apply(self, [listener, statsParser[listener](items)]);
+            }
+        }
+
+
+    });
+    try {
+        // failed|closed  停掉获取
+        if (this.peer.iceConnectionState.search(/failed/gi) !== -1) {
+            this.do = false;
+        }
+    } catch (e) {
+        this.do = false;
+
+    }
+
+    // second argument checks to see, if target-user is still connected.
+    if (this.do) {
+        setTimeout(getStatsLooper.bind(this), this.interval);
+    }
+
+}
+
+
+
+function emit() {
+    var args = Array.prototype.slice.call(arguments);
+    var event = args.shift();
+    if (this.listeners[event]) {
+        this.listeners[event].forEach(function(fn) {
+            fn.apply(null, args);
+        });
+    }
+}
+
+
 var statsParser = DebugWebRTC.statsParser = {};
 
 statsParser.checkIfOfferer = function(results) {
@@ -330,109 +437,3 @@ statsParser.getStreams = function(results) {
     };
 
 };
-
-/**
- * [DebugWebRTC description]
- * @param {[Object]} config  
- * @param {object} config.peer            PeerConnection instance
- * @param {number} config.interval        getStats interval
- */
-function DebugWebRTC(config) {
-
-    config = config || {};
-
-    if (!config.peer) { throw 'cannot find PeerConnection instance'; }
-
-    this.listeners = {};
-    this.peer = config.peer;
-    this.interval = config.interval || 1000;
-    this.start();
-}
-
-
-/**
- * 
- * @param  {[type]} type [description]  TYPES
- * @return {[type]}      [description]
- */
-DebugWebRTC.prototype.on = function(type, fn) {
-    if (this.listeners[type]) {
-        this.listeners[type].push(fn);
-    } else {
-        this.listeners[type] = [fn];
-    }
-};
-
-DebugWebRTC.prototype.stop = function() {
-    this.do = false;
-};
-DebugWebRTC.prototype.start = function() {
-    this.do = true; //是否要获取统计数据
-    setTimeout(getStatsLooper.bind(this), this.interval);
-};
-
-function getStatsLooper() {
-    var self = this;
-
-    this.peer.getStats(function(res) {
-
-        var items = [],
-            listener = '';
-
-        res.result().forEach(function(res) {
-            var item = {};
-            res.names().forEach(function(name) {
-                item[name] = res.stat(name);
-            });
-            item.id = res.id;
-            item.type = res.type;
-            item.timestamp = res.timestamp;
-            items.push(item);
-        });
-
-        for (listener in self.listeners) {
-            if (Object.values(TYPES).indexOf(listener) !== -1) {
-                emit.apply(self, [listener, items.filter(function(itm) {
-                    if (listener === TYPES.TYPE_ALL) {
-                        return true;
-                    }
-
-                    return itm.type === listener;
-                })]);
-            }
-
-            if (Object.keys(statsParser).indexOf(listener) !== -1) {
-                emit.apply(self, [listener, statsParser[listener](items)]);
-            }
-        }
-
-
-    });
-    try {
-        // failed|closed  停掉获取
-        if (this.peer.iceConnectionState.search(/failed/gi) !== -1) {
-            this.do = false;
-        }
-    } catch (e) {
-        this.do = false;
-
-    }
-
-    // second argument checks to see, if target-user is still connected.
-    if (this.do) {
-        setTimeout(getStatsLooper.bind(this), this.interval);
-    }
-
-}
-
-
-
-function emit() {
-    var args = Array.prototype.slice.call(arguments);
-    var event = args.shift();
-    if (this.listeners[event]) {
-        this.listeners[event].forEach(function(fn) {
-            fn.apply(null, args);
-        });
-    }
-}
