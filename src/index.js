@@ -67,10 +67,17 @@ DebugWebRTC.prototype.on = function(type, fn) {
 
 DebugWebRTC.prototype.stop = function() {
     this.do = false;
+    clearTimeout(this.timer);
+    this.timer = null;
 };
 DebugWebRTC.prototype.start = function() {
     this.do = true; //是否要获取统计数据
-    setTimeout(getStatsLooper.bind(this), this.interval);
+    this.timer = setTimeout(getStatsLooper.bind(this), this.interval);
+};
+DebugWebRTC.prototype.destroy = function() {
+    this.stop();
+    this.listeners = null;
+    this.peer = null;
 };
 
 function getStatsLooper() {
@@ -122,7 +129,7 @@ function getStatsLooper() {
 
     // second argument checks to see, if target-user is still connected.
     if (this.do) {
-        setTimeout(getStatsLooper.bind(this), this.interval);
+        this.timer = setTimeout(getStatsLooper.bind(this), this.interval);
     }
 
 }
@@ -372,16 +379,16 @@ statsParser.getConnectioin = function(results) {
         var ret = results[i];
         if (ret.type === TYPES.TYPE_GOOG_CANDIDATE_PAIR && ret.googActiveConnection === 'true') {
             connection.transport = ret.googTransportType;
-            connection.rtt = ret.googRtt;
+            connection.rtt = parseInt(ret.googRtt);
             connection.localAddress = ret.googLocalAddress;
             connection.remoteAddress = ret.googRemoteAddress;
-            connection.packetsSent = ret.packetsSent;
-            connection.bytesSent = ret.bytesSent;
-            connection.bytesReceived = ret.bytesReceived;
-            connection.requestsSent = ret.requestsSent;
-            connection.requestsReceived = ret.requestsReceived;
-            connection.responsesSent = ret.responsesSent;
-            connection.responsesReceived = ret.responsesReceived;
+            connection.packetsSent = parseInt(ret.packetsSent);
+            connection.bytesSent = parseInt(ret.bytesSent);
+            connection.bytesReceived = parseInt(ret.bytesReceived);
+            connection.requestsSent = parseInt(ret.requestsSent);
+            connection.requestsReceived = parseInt(ret.requestsReceived);
+            connection.responsesSent = parseInt(ret.responsesSent);
+            connection.responsesReceived = parseInt(ret.responsesReceived);
         }
     }
 
@@ -424,12 +431,36 @@ statsParser.getStreams = function(results) {
 
     var ssrc = {
         audio: {
-            send: [],
-            recv: []
+            send: {
+                bytes: 0,
+                packets: 0,
+                packetsLost: 0,
+                googRtt: 0,
+                googJitterReceived: 0
+            },
+            recv: {
+                bytes: 0,
+                packets: 0,
+                packetsLost: 0,
+                googJitterReceived: 0,
+                googJitterBufferMs: 0
+            }
         },
         video: {
-            send: [],
-            recv: []
+            send: {
+                bytes: 0,
+                packets: 0,
+                packetsLost: 0,
+                googRtt: 0,
+                googEncodeUsagePercent: 0
+            },
+            recv: {
+                bytes: 0,
+                packets: 0,
+                packetsLost: 0,
+                googCurrentDelayMs: 0,
+                googJitterBufferMs: 0
+            }
         }
     };
 
@@ -439,21 +470,31 @@ statsParser.getStreams = function(results) {
         if (ret.googCodecName && ret.type === 'ssrc' && (ret.mediaType === 'video' || ret.mediaType === 'audio')) {
             var type = ret.id.split('_').pop();
 
-            if (ssrc[ret.mediaType][type].indexOf(ret.ssrc) === -1) {
-                ssrc[ret.mediaType][type].push(ret.ssrc);
+            ssrc[ret.mediaType][type].bytes = parseInt(ret.bytesReceived || ret.bytesSent);
+            ssrc[ret.mediaType][type].packets = parseInt(ret.packetsReceived || ret.packetsSent);
+            ssrc[ret.mediaType][type].packetsLost = parseInt(ret.packetsLost);
+
+            if (type === 'send') {
+                ssrc[ret.mediaType].send.googRtt = parseInt(ret.googRtt);
+
+                if (ret.mediaType === 'audio') {
+                    ssrc.audio.send.googJitterReceived = parseInt(ret.googJitterReceived);
+                } else {
+                    ssrc.video.send.googEncodeUsagePercent = parseInt(ret.googEncodeUsagePercent);
+                }
+
+            } else {
+                ssrc[ret.mediaType].recv.googJitterBufferMs = parseInt(ret.googJitterBufferMs);
+
+                if (ret.mediaType === 'audio') {
+                    ssrc.audio.recv.googJitterReceived = parseInt(ret.googJitterReceived);
+                } else {
+                    ssrc.video.recv.googCurrentDelayMs = parseInt(ret.googCurrentDelayMs);
+                }
             }
         }
     }
 
-    return {
-        video: {
-            send: ssrc.video.send.length,
-            recv: ssrc.video.recv.length
-        },
-        audio: {
-            send: ssrc.audio.send.length,
-            recv: ssrc.audio.recv.length
-        }
-    };
+    return ssrc;
 
 };

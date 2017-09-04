@@ -134,13 +134,37 @@ module.exports = {
     'parese getStreams': function(test) {
         var streams = DebugWebRTC.statsParser.getStreams(results);
         test.deepEqual(streams, {
-            video: {
-                send: 1,
-                recv: 1
-            },
             audio: {
-                send: 1,
-                recv: 1
+                send: {
+                    bytes: 96183,
+                    packets: 957,
+                    packetsLost: 0,
+                    googRtt: 16,
+                    googJitterReceived: 11
+                },
+                recv: {
+                    bytes: 96289,
+                    packets: 958,
+                    packetsLost: 0,
+                    googJitterReceived: 11,
+                    googJitterBufferMs: 76
+                }
+            },
+            video: {
+                send: {
+                    bytes: 4109772,
+                    packets: 3749,
+                    packetsLost: 0,
+                    googRtt: 8,
+                    googEncodeUsagePercent: 94
+                },
+                recv: {
+                    bytes: 3376635,
+                    packets: 3120,
+                    packetsLost: 0,
+                    googCurrentDelayMs: 76,
+                    googJitterBufferMs: 55
+                }
             }
         });
 
