@@ -31,6 +31,8 @@ DebugWebRTC.TYPES = TYPES;
 DebugWebRTC.PARSERS = PARSERS;
 DebugWebRTC.freeice = require('freeice');
 
+var statsParser = DebugWebRTC.statsParser = {};
+
 /**
  * [DebugWebRTC description]
  * @param {[Object]} config  
@@ -137,8 +139,6 @@ function emit() {
     }
 }
 
-
-var statsParser = DebugWebRTC.statsParser = {};
 
 statsParser.checkIfOfferer = function(results) {
 
@@ -355,13 +355,33 @@ statsParser.getRemotecandidate = function(results) {
 
 statsParser.getConnectioin = function(results) {
     var connection = {
-        transport: ''
+        transport: '',
+        rtt: 0,
+        localAddress: '',
+        remoteAddress: '',
+        packetsSent: 0,
+        bytesSent: 0,
+        bytesReceived: 0,
+        requestsSent: 0,
+        requestsReceived: 0,
+        responsesSent: 0,
+        responsesReceived: 0
     };
 
     for (var i = 0; i < results.length; i++) {
         var ret = results[i];
         if (ret.type === TYPES.TYPE_GOOG_CANDIDATE_PAIR && ret.googActiveConnection === 'true') {
             connection.transport = ret.googTransportType;
+            connection.rtt = ret.googRtt;
+            connection.localAddress = ret.googLocalAddress;
+            connection.remoteAddress = ret.googRemoteAddress;
+            connection.packetsSent = ret.packetsSent;
+            connection.bytesSent = ret.bytesSent;
+            connection.bytesReceived = ret.bytesReceived;
+            connection.requestsSent = ret.requestsSent;
+            connection.requestsReceived = ret.requestsReceived;
+            connection.responsesSent = ret.responsesSent;
+            connection.responsesReceived = ret.responsesReceived;
         }
     }
 

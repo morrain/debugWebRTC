@@ -102,6 +102,16 @@ module.exports = {
         var conn = DebugWebRTC.statsParser.getConnectioin(results);
         test.deepEqual(conn, {
             transport: 'udp',
+            rtt: 1,
+            localAddress: '10.242.72.102:52867',
+            remoteAddress: '10.242.72.102:57309',
+            packetsSent: 5131,
+            bytesSent: 4248192,
+            bytesReceived: 3511972,
+            requestsSent: 13,
+            requestsReceived: 11,
+            responsesSent: 11,
+            responsesReceived: 13,
             locals: DebugWebRTC.statsParser.getLocalCandidates(results),
             remotes: DebugWebRTC.statsParser.getRemotecandidate(results)
         });
