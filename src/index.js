@@ -103,7 +103,10 @@ function getStatsLooper() {
         });
 
         for (listener in self.listeners) {
-            if (Object.values(TYPES).indexOf(listener) !== -1) {
+            if (Object.keys(TYPES).map(function(type) {
+                    return TYPES[type];
+                }).indexOf(listener) !== -1) {
+
                 emit.apply(self, [listener, items.filter(function(itm) {
                     if (listener === TYPES.TYPE_ALL) {
                         return true;
